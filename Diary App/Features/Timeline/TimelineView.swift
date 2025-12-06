@@ -4,13 +4,15 @@ import SwiftData
 @MainActor
 struct TimelineView: View {
     @StateObject private var store: TimelineStore
+    private let refreshTrigger: UUID
 
-    init(repository: EntryRepositoryType) {
+    init(repository: EntryRepositoryType, refreshTrigger: UUID = UUID()) {
         _store = StateObject(wrappedValue: TimelineStore(repository: repository))
+        self.refreshTrigger = refreshTrigger
     }
 
-    init() {
-        self.init(repository: EntryRepository())
+    init(refreshTrigger: UUID = UUID()) {
+        self.init(repository: EntryRepository(), refreshTrigger: refreshTrigger)
     }
 
     private let dateFormatter: DateFormatter = {
@@ -53,9 +55,7 @@ struct TimelineView: View {
                 }
             }
             .navigationTitle("Timeline")
-            .task {
-                store.load()
-            }
+            .task { store.send(.onAppear) }
             .alert(
                 "Error",
                 isPresented: Binding(
@@ -73,6 +73,9 @@ struct TimelineView: View {
                     Text(store.state.errorMessage ?? "")
                 }
             )
+        }
+        .onChange(of: refreshTrigger) { _ in
+            store.send(.reload)
         }
     }
 }
