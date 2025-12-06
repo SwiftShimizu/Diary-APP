@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  Diary App
-//
-//  Created by 志水拓哉 on 2025/12/06.
-//
-
 import SwiftUI
 
 struct ContentView: View {
