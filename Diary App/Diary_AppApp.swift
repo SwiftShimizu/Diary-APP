@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct Diary_AppApp: App {
@@ -6,5 +7,6 @@ struct Diary_AppApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(PersistenceController.shared.container)
     }
 }
