@@ -5,14 +5,16 @@ struct EntryEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store: EntryEditorStore
     var onSaved: (() -> Void)?
+    private let isEditing: Bool
 
-    init(repository: EntryRepositoryType, onSaved: (() -> Void)? = nil) {
-        _store = StateObject(wrappedValue: EntryEditorStore(repository: repository))
+    init(entry: EntryEntity?, repository: EntryRepositoryType, onSaved: (() -> Void)? = nil) {
+        _store = StateObject(wrappedValue: EntryEditorStore(repository: repository, editingEntry: entry))
         self.onSaved = onSaved
+        self.isEditing = entry != nil
     }
 
-    init(onSaved: (() -> Void)? = nil) {
-        self.init(repository: EntryRepository(), onSaved: onSaved)
+    init(entry: EntryEntity? = nil, onSaved: (() -> Void)? = nil) {
+        self.init(entry: entry, repository: EntryRepository(), onSaved: onSaved)
     }
 
     var body: some View {
@@ -41,7 +43,7 @@ struct EntryEditorView: View {
                     ))
                 }
             }
-            .navigationTitle("New Entry")
+            .navigationTitle(isEditing ? "Edit Entry" : "New Entry")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

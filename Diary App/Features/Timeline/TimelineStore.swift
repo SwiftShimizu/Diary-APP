@@ -6,6 +6,7 @@ import Combine
 final class TimelineStore: ObservableObject {
     private enum Effect {
         case load
+        case delete(EntryEntity)
     }
 
     @Published private(set) var state = TimelineState()
@@ -29,6 +30,8 @@ final class TimelineStore: ObservableObject {
         switch intent {
         case .onAppear, .reload:
             return .load
+        case .delete(let entry):
+            return .delete(entry)
         }
     }
 
@@ -36,6 +39,8 @@ final class TimelineStore: ObservableObject {
         switch effect {
         case .load:
             load()
+        case .delete(let entry):
+            delete(entry)
         }
     }
 
@@ -45,6 +50,15 @@ final class TimelineStore: ObservableObject {
             state.errorMessage = nil
         } catch {
             state.errorMessage = "Failed to load entries: \(error.localizedDescription)"
+        }
+    }
+
+    private func delete(_ entry: EntryEntity) {
+        do {
+            try repository.softDelete(entry)
+            load()
+        } catch {
+            state.errorMessage = "Failed to delete entry: \(error.localizedDescription)"
         }
     }
 

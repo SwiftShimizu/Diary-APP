@@ -21,7 +21,13 @@ final class EntryRepository: EntryRepositoryType {
     }
 
     func fetchAll() throws -> [EntryEntity] {
-        let descriptor = FetchDescriptor<EntryEntity>(sortBy: [SortDescriptor(\.diaryDate, order: .reverse)])
+        let predicate = #Predicate<EntryEntity> { entry in
+            entry.isDeleted == false
+        }
+        let descriptor = FetchDescriptor<EntryEntity>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.diaryDate, order: .reverse)]
+        )
         return try context.fetch(descriptor)
     }
 

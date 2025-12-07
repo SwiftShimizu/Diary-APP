@@ -4,15 +4,15 @@ import SwiftData
 @MainActor
 struct TimelineView: View {
     @StateObject private var store: TimelineStore
-    private let refreshTrigger: UUID
+    @State private var showingEditor = false
+    @State private var editingEntry: EntryEntity?
 
-    init(repository: EntryRepositoryType, refreshTrigger: UUID = UUID()) {
+    init(repository: EntryRepositoryType) {
         _store = StateObject(wrappedValue: TimelineStore(repository: repository))
-        self.refreshTrigger = refreshTrigger
     }
 
-    init(refreshTrigger: UUID = UUID()) {
-        self.init(repository: EntryRepository(), refreshTrigger: refreshTrigger)
+    init() {
+        self.init(repository: EntryRepository())
     }
 
     private let dateFormatter: DateFormatter = {
@@ -23,59 +23,80 @@ struct TimelineView: View {
     }()
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if store.state.entries.isEmpty {
-                    ContentUnavailableView("No entries yet", systemImage: "book.closed")
-                } else {
-                    List(store.state.entries) { entry in
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(entry.title)
-                                .font(.headline)
-                            Text(entry.body)
-                                .font(.subheadline)
+        Group {
+            if store.state.entries.isEmpty {
+                ContentUnavailableView("No entries yet", systemImage: "book.closed")
+            } else {
+                List(store.state.entries) { entry in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(entry.title)
+                            .font(.headline)
+                        Text(entry.body)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                        HStack(spacing: 8) {
+                            Text(dateFormatter.string(from: entry.diaryDate))
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                            HStack(spacing: 8) {
-                                Text(dateFormatter.string(from: entry.diaryDate))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Text(entry.authorName)
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.gray.opacity(0.15))
-                                    .clipShape(Capsule())
-                            }
+                            Spacer()
+                            Text(entry.authorName)
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(hex: entry.authorColorHex).opacity(0.2))
+                                .clipShape(Capsule())
                         }
-                        .padding(.vertical, 4)
                     }
-                    .listStyle(.plain)
+                    .padding(.vertical, 4)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button("Edit") {
+                            editingEntry = entry
+                            showingEditor = true
+                        }
+                        .tint(.blue)
+
+                        Button("Delete", role: .destructive) {
+                            store.send(.delete(entry))
+                        }
+                    }
+                }
+                .listStyle(.plain)
+            }
+        }
+        .navigationTitle("Timeline")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    editingEntry = nil
+                    showingEditor = true
+                } label: {
+                    Image(systemName: "plus")
                 }
             }
-            .navigationTitle("Timeline")
-            .task { store.send(.onAppear) }
-            .alert(
-                "Error",
-                isPresented: Binding(
-                    get: { store.state.errorMessage != nil },
-                    set: { newValue in
-                        if !newValue { store.clearError() }
-                    }
-                ),
-                actions: {
-                    Button("OK", role: .cancel) {
-                        store.clearError()
-                    }
-                },
-                message: {
-                    Text(store.state.errorMessage ?? "")
-                }
-            )
         }
-        .onChange(of: refreshTrigger) { _ in
-            store.send(.reload)
+        .task { store.send(.onAppear) }
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { store.state.errorMessage != nil },
+                set: { newValue in
+                    if !newValue { store.clearError() }
+                }
+            ),
+            actions: {
+                Button("OK", role: .cancel) {
+                    store.clearError()
+                }
+            },
+            message: {
+                Text(store.state.errorMessage ?? "")
+            }
+        )
+        .sheet(isPresented: $showingEditor) {
+            EntryEditorView(entry: editingEntry) {
+                store.send(.reload)
+            }
         }
     }
 }
