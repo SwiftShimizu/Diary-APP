@@ -1,0 +1,12 @@
+# Xcode / macOS
+DerivedData/
+*.xcuserstate
+**/xcuserdata/
+**/xcdebugger/
+
+# Python venv / local server experiments
+diary-server/
+**/.venv/
+
+# Supabase secrets (DO NOT COMMIT)
+Diary App/Supabase.plist
