@@ -3,9 +3,12 @@ import SwiftData
 
 @MainActor
 struct TimelineView: View {
+    @EnvironmentObject private var auth: AuthSessionStore
     @StateObject private var store: TimelineStore
     @State private var showingEditor = false
     @State private var editingEntry: EntryEntity?
+    @State private var currentAuthorColorHex: String = AuthorProfileStorage().load().colorHex
+    private let syncService = SyncService()
 
     init(repository: EntryRepositoryType) {
         _store = StateObject(wrappedValue: TimelineStore(repository: repository))
@@ -44,7 +47,13 @@ struct TimelineView: View {
                                 .font(.caption)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color(hex: entry.authorColorHex).opacity(0.2))
+                                .background(
+                                    Color(
+                                        hex: entry.authorID == auth.session?.user.id
+                                            ? currentAuthorColorHex
+                                            : entry.authorColorHex
+                                    ).opacity(0.2)
+                                )
                                 .clipShape(Capsule())
                         }
                     }
@@ -75,7 +84,12 @@ struct TimelineView: View {
                 }
             }
         }
-        .task { store.send(.onAppear) }
+        .task {
+            if let session = auth.session {
+                await syncService.sync(session: session)
+            }
+            store.send(.onAppear)
+        }
         .alert(
             "Error",
             isPresented: Binding(
@@ -98,6 +112,9 @@ struct TimelineView: View {
                 store.send(.reload)
             }
         }
+        .onAppear {
+            currentAuthorColorHex = AuthorProfileStorage().load().colorHex
+        }
     }
 }
 
@@ -117,4 +134,5 @@ struct TimelineView: View {
 
     return TimelineView(repository: EntryRepository(container: controller.container))
         .modelContainer(controller.container)
+        .environmentObject(AuthSessionStore())
 }

@@ -76,6 +76,12 @@ struct SettingsView: View {
                 Text(store.state.errorMessage ?? "")
             }
         )
+        .onChange(of: store.state.infoMessage) { _, message in
+            guard message != nil else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                store.send(.clearMessages)
+            }
+        }
     }
 }
 

@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 protocol EntryRepositoryType {
-    func fetchAll() throws -> [EntryEntity]
+    func fetchAll(includeDeleted: Bool) throws -> [EntryEntity]
     func insert(_ entry: EntryEntity) throws
     func update(_ entry: EntryEntity) throws
     func softDelete(_ entry: EntryEntity) throws
@@ -20,8 +20,8 @@ final class EntryRepository: EntryRepositoryType {
         self.init(container: PersistenceController.shared.container)
     }
 
-    func fetchAll() throws -> [EntryEntity] {
-        let predicate = #Predicate<EntryEntity> { entry in
+    func fetchAll(includeDeleted: Bool = false) throws -> [EntryEntity] {
+        let predicate = includeDeleted ? nil : #Predicate<EntryEntity> { entry in
             entry.isDeleted == false
         }
         let descriptor = FetchDescriptor<EntryEntity>(

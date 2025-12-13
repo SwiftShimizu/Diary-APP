@@ -2,13 +2,20 @@ import SwiftUI
 
 @MainActor
 struct EntryEditorView: View {
+    @EnvironmentObject private var auth: AuthSessionStore
     @Environment(\.dismiss) private var dismiss
     @StateObject private var store: EntryEditorStore
     var onSaved: (() -> Void)?
     private let isEditing: Bool
 
     init(entry: EntryEntity?, repository: EntryRepositoryType, onSaved: (() -> Void)? = nil) {
-        _store = StateObject(wrappedValue: EntryEditorStore(repository: repository, editingEntry: entry))
+        _store = StateObject(
+            wrappedValue: EntryEditorStore(
+                repository: repository,
+                editingEntry: entry,
+                profileStorage: AuthorProfileStorage()
+            )
+        )
         self.onSaved = onSaved
         self.isEditing = entry != nil
     }
@@ -67,6 +74,11 @@ struct EntryEditorView: View {
                 actions: { Button("OK", role: .cancel) { store.send(.clearError) } },
                 message: { Text(store.state.errorMessage ?? "") }
             )
+            .task {
+                if let userID = auth.session?.user.id {
+                    store.send(.setCurrentUserID(userID))
+                }
+            }
         }
     }
 }

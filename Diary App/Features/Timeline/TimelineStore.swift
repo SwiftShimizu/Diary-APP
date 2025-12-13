@@ -46,7 +46,7 @@ final class TimelineStore: ObservableObject {
 
     private func load() {
         do {
-            state.entries = try repository.fetchAll()
+            state.entries = try repository.fetchAll(includeDeleted: false)
             state.errorMessage = nil
         } catch {
             state.errorMessage = "Failed to load entries: \(error.localizedDescription)"

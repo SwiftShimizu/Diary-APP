@@ -1,6 +1,7 @@
 import Foundation
 
 enum EntryEditorIntent {
+    case setCurrentUserID(String)
     case updateTitle(String)
     case updateBody(String)
     case updateDate(Date)

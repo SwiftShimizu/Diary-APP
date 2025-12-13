@@ -16,7 +16,7 @@ final class EntryEditorStore: ObservableObject {
     init(
         repository: EntryRepositoryType,
         editingEntry: EntryEntity? = nil,
-        profileStorage: AuthorProfileStorage = AuthorProfileStorage()
+        profileStorage: AuthorProfileStorage
     ) {
         self.repository = repository
         self.editingEntry = editingEntry
@@ -40,7 +40,11 @@ final class EntryEditorStore: ObservableObject {
     }
 
     convenience init(editingEntry: EntryEntity? = nil) {
-        self.init(repository: EntryRepository(), editingEntry: editingEntry)
+        self.init(
+            repository: EntryRepository(),
+            editingEntry: editingEntry,
+            profileStorage: AuthorProfileStorage()
+        )
     }
 
     func send(_ intent: EntryEditorIntent, onSaved: (() -> Void)? = nil) {
@@ -51,6 +55,8 @@ final class EntryEditorStore: ObservableObject {
 
     private func reduce(_ intent: EntryEditorIntent) -> Effect? {
         switch intent {
+        case .setCurrentUserID(let userID):
+            setCurrentUserID(userID)
         case .updateTitle(let text):
             updateTitle(text)
         case .updateBody(let text):
@@ -65,6 +71,12 @@ final class EntryEditorStore: ObservableObject {
             clearError()
         }
         return nil
+    }
+
+    private func setCurrentUserID(_ userID: String) {
+        if editingEntry == nil {
+            state.authorID = userID
+        }
     }
 
     private func updateTitle(_ text: String) {
